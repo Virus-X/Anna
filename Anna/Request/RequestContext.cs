@@ -58,6 +58,16 @@ namespace Anna.Request
         }
 
         /// <summary>
+        /// Create a response that redirects to specified url.
+        /// </summary>
+        /// <param name="url">The URL to redirect to.</param>
+        /// <returns>A response object that can be further tuned. Call Send() to send the response.</returns>
+        public virtual RedirectResponse Redirect(string url)
+        {
+            return new RedirectResponse(this, url);
+        }
+
+        /// <summary>
         /// Send an empty response with only the specified HTTP status code. Use <c>Response()</c> to change the content type or to set additional headers.
         /// </summary>
         /// <param name="statusCode">HTTP status code</param>

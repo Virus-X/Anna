@@ -9,10 +9,11 @@ namespace Anna.Tests.Util
     {
         public static HttpWebResponse ExecuteGet(string url)
         {
-            var request = WebRequest.Create(url);
+            var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             request.ContentLength = 0;
-            return (HttpWebResponse) request.GetResponse();
+            request.AllowAutoRedirect = false;
+            return (HttpWebResponse)request.GetResponse();
         }
 
         public static Action CancelableGet(string url)

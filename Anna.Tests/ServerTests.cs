@@ -142,6 +142,20 @@ namespace Anna.Tests
             }
         }
 
+        [Test]
+        public void CanReturnARedirectResponse()
+        {
+            using (var server = new HttpServer("http://*:1234/"))
+            {
+                server.GET("/")
+                      .Subscribe(ctx => ctx.Redirect(@"http://google.com").Send());
+
+                var response = Browser.ExecuteGet("http://localhost:1234");
+                response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+                var location = response.Headers[HttpResponseHeader.Location];
+                location.Should().Contain(@"http://google.com");
+            }
+        }
 
 
         [Test]

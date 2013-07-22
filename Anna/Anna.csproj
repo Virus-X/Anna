@@ -62,6 +62,7 @@
     <Compile Include="Request\ArgumentsDynamic.cs" />
     <Compile Include="Responses\BinaryResponse.cs" />
     <Compile Include="Responses\EmptyResponse.cs" />
+    <Compile Include="Responses\RedirectResponse.cs" />
     <Compile Include="Responses\StaticFileResponse.cs" />
     <Compile Include="Responses\StringResponse.cs" />
     <Compile Include="Observers\UnhandledRouteObserver.cs" />
