@@ -18,7 +18,7 @@ namespace Anna
         private readonly IObservable<RequestContext> stream;
 
         //URI - METHOD
-        private readonly List<Tuple<string, string>> handledRoutes 
+        private readonly List<Tuple<string, string>> handledRoutes
             = new List<Tuple<string, string>>();
         private readonly IScheduler scheduler;
 
@@ -28,10 +28,25 @@ namespace Anna
         /// <param name="url">Prefix URL for web service. Must include a trailing slash. Use e.g. "http://*:5555/" to listen on port 5555 for any given hostname.</param>
         /// <param name="scheduler">Any valid Rx scheduler</param>
         public HttpServer(string url, IScheduler scheduler = null)
+            : this(new[] { url }, scheduler)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new HTTP Server that listens on a particular port and prefix. Stops listening when Dispose() is called, so recommended usage is inside a using() block.
+        /// </summary>
+        /// <param name="urlPrefixes">The URL prefixes for web service. Must include a trailing slash. Use e.g. "http://*:5555/" to listen on port 5555 for any given hostname.</param>
+        /// <param name="scheduler">Any valid Rx scheduler</param>
+        public HttpServer(IEnumerable<string> urlPrefixes, IScheduler scheduler = null)
         {
             this.scheduler = scheduler ?? new EventLoopScheduler();
             listener = new HttpListener();
-            listener.Prefixes.Add(url);
+
+            foreach (var prefix in urlPrefixes)
+            {
+                listener.Prefixes.Add(prefix);
+            }
+
             listener.Start();
             stream = ObservableHttpContext();
         }
@@ -146,15 +161,15 @@ namespace Anna
             handledRoutes.Add(new Tuple<string, string>(uri, method));
 
             var uriTemplate = new UriTemplate(uri);
-            return Observable.Create<RequestContext>(obs => 
-                stream.Subscribe(ctx => OnUriAndMethodHandler(ctx, method, uriTemplate, obs), 
+            return Observable.Create<RequestContext>(obs =>
+                stream.Subscribe(ctx => OnUriAndMethodHandler(ctx, method, uriTemplate, obs),
                                  obs.OnError, obs.OnCompleted));
         }
 
         private static void OnUriAndMethodHandler(
-                RequestContext ctx, 
-                string method, 
-                UriTemplate uriTemplate, 
+                RequestContext ctx,
+                string method,
+                UriTemplate uriTemplate,
                 IObserver<RequestContext> obs)
         {
             if (!string.IsNullOrEmpty(method) && ctx.Request.HttpMethod != method) return;

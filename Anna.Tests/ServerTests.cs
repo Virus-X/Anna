@@ -12,23 +12,41 @@ using Anna.Tests.Util;
 using Moq;
 using NUnit.Framework;
 using SharpTestsEx;
-using Enumerable = System.Linq.Enumerable;
 
 namespace Anna.Tests
 {
+    [TestFixture]
     public class ServerTests
     {
         [Test]
         public void CanReturnAnString()
         {
-            using(var server = new HttpServer("http://*:1234/"))
+            using (var server = new HttpServer("http://*:1234/"))
             {
                 server.GET("/")
                       .Subscribe(ctx => ctx.Respond("hello world"));
-                
+
                 Browser.ExecuteGet("http://localhost:1234")
                     .ReadAllContent()
-                    .Should().Be.EqualTo("hello world");    
+                    .Should().Be.EqualTo("hello world");
+            }
+        }
+
+        [Test]
+        public void CanListenOnMultiplePrefixes()
+        {
+            using (var server = new HttpServer(new[] { "http://*:1234/", "http://*:1235/" }))
+            {
+                server.GET("/")
+                      .Subscribe(ctx => ctx.Respond("hello world"));
+
+                Browser.ExecuteGet("http://localhost:1234")
+                    .ReadAllContent()
+                    .Should().Be.EqualTo("hello world");
+
+                Browser.ExecuteGet("http://localhost:1235")
+                    .ReadAllContent()
+                    .Should().Be.EqualTo("hello world");
             }
         }
 
@@ -107,18 +125,18 @@ namespace Anna.Tests
                 server.POST("/")
                       .Subscribe(ctx =>
                       {
-                            ctx.Request.GetBody().Subscribe(body => 
-                            { 
-                                try
-                                {
-                                    Console.WriteLine(body);
-                                    body.Should().Be.EqualTo(requestBody);
-                                } 
-                                finally 
-                                {
-                                   ctx.Respond("hi");
-                                }
-                            });
+                          ctx.Request.GetBody().Subscribe(body =>
+                          {
+                              try
+                              {
+                                  Console.WriteLine(body);
+                                  body.Should().Be.EqualTo(requestBody);
+                              }
+                              finally
+                              {
+                                  ctx.Respond("hi");
+                              }
+                          });
                       });
 
                 //Browser.ExecutePost("http://posttestserver.com/post.php", requestBody)
@@ -127,7 +145,7 @@ namespace Anna.Tests
                     .Should().Contain("hi");
             }
         }
-        
+
         [Test]
         public void CanReturnAStaticFile()
         {
@@ -223,7 +241,7 @@ namespace Anna.Tests
 
                 Browser.ExecuteGet("http://localhost:1234/customer/peter")
                     .ReadAllContent().Should().Be.EqualTo("hello peter");
-                
+
                 Browser.ExecutePost("http://localhost:1234/customer/peter")
                     .ReadAllContent().Should().Be.EqualTo("hello peter");
             }
@@ -272,14 +290,15 @@ namespace Anna.Tests
         [Test]
         public void WhenWritingToTheStreamFail_ThenTryToRespond500()
         {
-            using(var server = new HttpServer("http://*:1234/", Scheduler.CurrentThread))
+            using (var server = new HttpServer("http://*:1234/", Scheduler.CurrentThread))
             {
                 server.RAW("")
                     .Subscribe(ctx =>
                                    {
-                                       var mockedResponse = new Mock<Response>(ctx, 201);
+                                       var mockedResponse = new Mock<Response>(ctx, 201) { CallBase = true };
                                        mockedResponse.Setup(r => r.WriteStream(It.IsAny<Stream>()))
                                                      .Returns(Observable.Throw<Stream>(new InvalidOperationException()));
+
                                        mockedResponse.Object.Send();
                                    });
 
